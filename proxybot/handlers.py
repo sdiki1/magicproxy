@@ -102,7 +102,7 @@ def tg_emoji(emoji_id: str, fallback: str) -> str:
 
 def build_welcome_text() -> str:
     return (
-        f"{tg_emoji(EMOJI_SHIELD, '🛡')} <b>TeleProx</b> - сервис по покупке прокси для работы в Telegram.\n\n"
+        f"{tg_emoji(EMOJI_SHIELD, '🛡')} <b>WProxy</b> - сервис по покупке прокси для работы в Telegram.\n\n"
         f"{tg_emoji(EMOJI_KEY, '🔑')} Подключение в Telegram — в пару кликов.\n\n"
         "<blockquote>Сервис выдаёт персональные SOCKS5-прокси, привязанные к вашему Telegram-профилю "
         "или к профилю друга.</blockquote>"
@@ -1899,13 +1899,13 @@ def create_router(
         try:
             await callback.bot.send_invoice(
                 chat_id=callback.from_user.id,
-                title="TeleProx - оплата звёздами",
+                title="WProxy - оплата звёздами",
                 description=description,
                 payload=f"stars:{payment_id}",
                 provider_token="",
                 currency="XTR",
-                prices=[LabeledPrice(label="Подписка TeleProx", amount=stars_amount)],
-                start_parameter=f"teleprox-stars-{payment_id}",
+                prices=[LabeledPrice(label="Подписка WProxy", amount=stars_amount)],
+                start_parameter=f"WProxy-stars-{payment_id}",
             )
         except TelegramBadRequest as exc:
             logger.warning("Could not send Stars invoice for payment %s: %s", payment_id, exc)
