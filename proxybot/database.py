@@ -435,6 +435,20 @@ class Database:
             for row in rows
         ]
 
+    async def update_plan(self, code: str, *, price_rub: int, duration_days: int) -> Plan | None:
+        cursor = await self.conn.execute(
+            """
+            UPDATE plans
+            SET price_rub = ?, duration_days = ?
+            WHERE code = ?
+            """,
+            (price_rub, duration_days, code),
+        )
+        await self.conn.commit()
+        if cursor.rowcount == 0:
+            return None
+        return await self.get_plan(code)
+
     async def create_payment(
         self,
         user_id: int,

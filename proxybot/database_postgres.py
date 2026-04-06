@@ -405,6 +405,29 @@ class PostgresDatabase:
             for row in rows
         ]
 
+    async def update_plan(self, code: str, *, price_rub: int, duration_days: int) -> Plan | None:
+        async with self.conn.cursor() as cur:
+            await cur.execute(
+                """
+                UPDATE plans
+                SET price_rub = %s, duration_days = %s
+                WHERE code = %s
+                RETURNING code, title, devices_count, price_rub, duration_days
+                """,
+                (price_rub, duration_days, code),
+            )
+            row = await cur.fetchone()
+        await self.conn.commit()
+        if row is None:
+            return None
+        return Plan(
+            code=row["code"],
+            title=row["title"],
+            devices_count=int(row["devices_count"]),
+            price_rub=int(row["price_rub"]),
+            duration_days=int(row["duration_days"]),
+        )
+
     async def create_payment(
         self,
         user_id: int,

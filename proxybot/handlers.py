@@ -31,6 +31,7 @@ from .keyboards import (
     EMOJI_GEM,
     EMOJI_SHIELD,
     admin_cancel_keyboard,
+    admin_plans_keyboard,
     admin_panel_keyboard,
     activate_first_proxy_keyboard,
     activate_proxy_keyboard,
@@ -65,6 +66,7 @@ class AdminStates(StatesGroup):
     user_configs = State()
     grant_proxies = State()
     remove_proxies = State()
+    edit_plan_values = State()
 
 
 class PurchaseStates(StatesGroup):
@@ -173,6 +175,20 @@ def build_admin_panel_text() -> str:
         f"{tg_emoji(EMOJI_SHIELD, '🛡')} <b>Админ-панель</b>\n\n"
         "Выберите действие из меню ниже."
     )
+
+
+def build_admin_plans_text(plans: list[Plan]) -> str:
+    lines = [
+        f"{tg_emoji(EMOJI_SHIELD, '🛡')} <b>Изменение тарифов</b>",
+        "",
+        "Выберите тариф для редактирования:",
+    ]
+    for plan in plans:
+        lines.append(
+            f"• <code>{plan.code}</code>: {plan.devices_count} устройств, "
+            f"{plan.price_rub}₽, {plan.duration_days} дн."
+        )
+    return "\n".join(lines)
 
 
 def normalize_user_profile(row: dict) -> UserProfile:
@@ -1092,6 +1108,66 @@ def create_router(
         )
         await callback.answer()
 
+    @router.callback_query(F.data == "admin:edit_plans")
+    async def cb_admin_edit_plans(callback: CallbackQuery, state: FSMContext) -> None:
+        if await handle_blocked_callback(db, callback):
+            return
+        if not await ensure_admin_callback_access(callback, state):
+            return
+        await state.clear()
+        plans = await db.get_plans()
+        if not plans:
+            await edit_or_send(
+                callback,
+                text="Тарифы не настроены.",
+                reply_markup=admin_panel_keyboard(),
+                parse_mode=None,
+            )
+            await callback.answer()
+            return
+        await edit_or_send(
+            callback,
+            text=build_admin_plans_text(plans),
+            reply_markup=admin_plans_keyboard(plans),
+            parse_mode="HTML",
+        )
+        await callback.answer()
+
+    @router.callback_query(F.data.startswith("admin:edit_plan:"))
+    async def cb_admin_edit_plan_pick(callback: CallbackQuery, state: FSMContext) -> None:
+        if await handle_blocked_callback(db, callback):
+            return
+        if not await ensure_admin_callback_access(callback, state):
+            return
+        parts = callback.data.split(":", maxsplit=2)
+        if len(parts) != 3:
+            await callback.answer("Некорректный тариф", show_alert=True)
+            return
+        plan_code = parts[2]
+        if not plan_code:
+            await callback.answer("Некорректный тариф", show_alert=True)
+            return
+        plan = await db.get_plan(plan_code)
+        if plan is None:
+            await callback.answer("Тариф не найден", show_alert=True)
+            return
+        await state.set_state(AdminStates.edit_plan_values)
+        await state.update_data(edit_plan_code=plan.code)
+        await edit_or_send(
+            callback,
+            text=(
+                f"Тариф <code>{plan.code}</code> ({plan.devices_count} устройств).\n"
+                f"Текущая цена: <b>{plan.price_rub}₽</b>\n"
+                f"Текущая длительность: <b>{plan.duration_days} дн.</b>\n\n"
+                "Отправьте: <code>&lt;цена_руб&gt; [дней]</code>\n"
+                "Пример: <code>35 30</code>\n"
+                "Если укажете только цену, длительность останется прежней."
+            ),
+            reply_markup=admin_cancel_keyboard(),
+            parse_mode="HTML",
+        )
+        await callback.answer()
+
     @router.message(AdminStates.broadcast_all)
     async def admin_state_broadcast_all(message: Message, state: FSMContext) -> None:
         if await handle_blocked_message(db, message):
@@ -1407,6 +1483,77 @@ def create_router(
         await message.answer(
             f"Удалено прокси: {removed_count}.",
             reply_markup=admin_panel_keyboard(),
+        )
+
+    @router.message(AdminStates.edit_plan_values)
+    async def admin_state_edit_plan_values(message: Message, state: FSMContext) -> None:
+        if await handle_blocked_message(db, message):
+            return
+        if not await ensure_admin_message_access(message, state):
+            return
+        payload = extract_text_payload(message)
+        if payload is None:
+            await message.answer("Отправьте данные в формате: <цена_руб> [дней].")
+            return
+
+        parts = payload.split()
+        if not parts or len(parts) > 2:
+            await message.answer("Формат: <цена_руб> [дней]. Пример: 35 30")
+            return
+
+        price_rub = parse_int(parts[0])
+        if price_rub is None:
+            await message.answer("Цена должна быть целым числом.")
+            return
+        if price_rub < 0 or price_rub > 1_000_000:
+            await message.answer("Цена должна быть в диапазоне 0..1000000.")
+            return
+
+        data = await state.get_data()
+        plan_code = str(data.get("edit_plan_code") or "").strip()
+        if not plan_code:
+            await state.clear()
+            await message.answer(
+                "Сессия редактирования устарела. Начните снова через меню админа.",
+                reply_markup=admin_panel_keyboard(),
+            )
+            return
+
+        plan = await db.get_plan(plan_code)
+        if plan is None:
+            await state.clear()
+            await message.answer("Тариф не найден.", reply_markup=admin_panel_keyboard())
+            return
+
+        duration_days = plan.duration_days
+        if len(parts) == 2:
+            parsed_duration = parse_int(parts[1])
+            if parsed_duration is None:
+                await message.answer("Количество дней должно быть целым числом.")
+                return
+            duration_days = parsed_duration
+        if duration_days < 1 or duration_days > 3650:
+            await message.answer("Дни должны быть в диапазоне 1..3650.")
+            return
+
+        updated_plan = await db.update_plan(
+            plan.code,
+            price_rub=price_rub,
+            duration_days=duration_days,
+        )
+        await state.clear()
+        if updated_plan is None:
+            await message.answer("Не удалось обновить тариф.", reply_markup=admin_panel_keyboard())
+            return
+        await message.answer(
+            (
+                f"Тариф обновлён:\n"
+                f"<code>{updated_plan.code}</code> — "
+                f"{updated_plan.devices_count} устройств, "
+                f"{updated_plan.price_rub}₽, {updated_plan.duration_days} дн."
+            ),
+            reply_markup=admin_panel_keyboard(),
+            parse_mode="HTML",
         )
 
     @router.callback_query(F.data == "menu:home_clear")

@@ -398,6 +398,9 @@ def admin_panel_keyboard() -> InlineKeyboardMarkup:
                 _button(text="8) Удалить прокси", callback_data="admin:remove_proxies", style="danger"),
             ],
             [
+                _button(text="9) Изменить тарифы", callback_data="admin:edit_plans", style="primary"),
+            ],
+            [
                 _button(text="Закрыть", callback_data="admin:close"),
             ],
         ]
@@ -413,3 +416,19 @@ def admin_cancel_keyboard() -> InlineKeyboardMarkup:
             ]
         ]
     )
+
+
+def admin_plans_keyboard(plans: list[Plan]) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    for plan in plans:
+        rows.append(
+            [
+                _button(
+                    text=f"{plan.devices_count} устр. • {plan.price_rub}₽ • {plan.duration_days} дн.",
+                    callback_data=f"admin:edit_plan:{plan.code}",
+                    style="primary",
+                )
+            ]
+        )
+    rows.append([_button(text="Меню админа", callback_data="admin:menu")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
