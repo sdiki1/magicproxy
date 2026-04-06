@@ -48,7 +48,7 @@ from .yookassa import YooKassaClient, YooKassaError
 
 logger = logging.getLogger(__name__)
 
-PROXY_FOOTER = "Сделано с помощью @TelePr0x_bot"
+PROXY_FOOTER = "Сделано с помощью @whtprx_bot"
 TEMP_KIND_PROXY_OUTPUT = "proxy_output"
 BLOCKED_TG_USER_ID = 1664076316
 BLOCKED_USER_TEXT = "Блок"
