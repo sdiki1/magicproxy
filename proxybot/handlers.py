@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from html import escape
 import logging
 import math
 import re
@@ -49,12 +48,11 @@ from .yookassa import YooKassaClient, YooKassaError
 
 logger = logging.getLogger(__name__)
 
-PROXY_FOOTER = "Сделано с помощью @whtprx_bot"
+PROXY_FOOTER = "👀Услугу сервиса  @whtprx_bot"
 TEMP_KIND_PROXY_OUTPUT = "proxy_output"
 BLOCKED_TG_USER_ID = 1664076316
 BLOCKED_USER_TEXT = "Блок"
 DEFAULT_BAN_TEXT = "Доступ к боту ограничен администратором."
-EMOJI_KEY = "5330115548900501467"
 STARS_PER_RUB = 2.5
 
 
@@ -104,10 +102,13 @@ def tg_emoji(emoji_id: str, fallback: str) -> str:
 
 def build_welcome_text() -> str:
     return (
-        f"{tg_emoji(EMOJI_SHIELD, '🛡')} <b>WProxy</b> - сервис по покупке прокси для работы в Telegram.\n\n"
-        f"{tg_emoji(EMOJI_KEY, '🔑')} Подключение в Telegram — в пару кликов.\n\n"
-        "<blockquote>Сервис выдаёт персональные SOCKS5-прокси, привязанные к вашему Telegram-профилю "
-        "или к профилю друга.</blockquote>"
+        "🚀 WProxy - автоматизированный сервис по приобретению прокси для работы вашего Telegram. 🌐\n\n"
+        "🚀 Неограниченная скорость\n"
+        "📶 Безлимитный трафик\n"
+        "📱💻🖥️ До 15 устройств\n"
+        "✅ Безотказная работа\n"
+        "🛠️ Техподдержка 24/7\n"
+        "🔄 Совместимость с iOS/Android."
     )
 
 
@@ -157,8 +158,9 @@ def rub_to_stars(amount_rub: int) -> int:
 
 def build_buy_months_text() -> str:
     return (
-        f"{tg_emoji(EMOJI_SHIELD, '🛡')} <b>Покупка прокси</b>\n\n"
-        "Шаг 1/3: Выберите срок действия прокси."
+        "🚀 Оформление заявки на покупку\n\n"
+        "Шаг 1/3\n\n"
+        "📅 Выберете период действия прокси:"
     )
 
 
@@ -397,22 +399,18 @@ def build_proxy_block(
     proxy_index: int,
     user_proxy_label: str,
     proxy_id: int,
-    tg_link: str,
     expires_at: int | None = None,
 ) -> str:
-    safe_tg_link = escape(tg_link, quote=True)
     expires_line = ""
     if expires_at is not None:
         expires_line = (
-            f"Истекает: {format_ts(expires_at)} "
+            f"⏳ Истекает: {format_ts(expires_at)}\n"
             f"(осталось {format_remaining(expires_at)})\n\n"
         )
     return (
-        f"PROXY-{proxy_index}-{user_proxy_label}\n"
-        f"Proxy ID: {proxy_id}\n"
+        f"🌐 PROXY-{proxy_index}-{user_proxy_label}\n"
+        f"🔑 Proxy ID: {proxy_id}\n"
         f"{expires_line}"
-        f"{tg_emoji('5433653135799228968', '✅')} Нажмите на ссылку, чтобы подключить прокси:\n"
-        f"{safe_tg_link}\n\n"
         f"{PROXY_FOOTER}"
     )
 
@@ -578,7 +576,6 @@ async def send_proxy_sequence(
             proxy_index=int(item["index"]),
             user_proxy_label=user_proxy_label,
             proxy_id=int(item["proxy_id"]),
-            tg_link=str(item["tg_link"]),
             expires_at=int(item["expires_at"]) if item.get("expires_at") is not None else None,
         )
         sent = await bot.send_message(
@@ -639,15 +636,19 @@ async def send_status(
             await bot.send_message(bot_chat_id, text, reply_markup=subscriptions_actions_keyboard())
         return
 
-    lines = [f"{tg_emoji(EMOJI_BOX, '📦')} <b>Активные прокси</b>", ""]
+    lines = ["🌐 Активные прокси", ""]
     for sub in subscriptions:
         expires_at = int(sub["expires_at"])
-        lines.append(
-            f"• #{sub['id']} — {sub['plan_title']} — до {format_ts(expires_at)} "
-            f"(осталось {format_remaining(expires_at)})"
+        lines.extend(
+            [
+                f"• #{sub['id']} - {sub['plan_title']}",
+                f"📆 до {format_ts(expires_at)}",
+                f"⏳(осталось {format_remaining(expires_at)})",
+                "",
+            ]
         )
 
-    text = "\n".join(lines)
+    text = "\n".join(lines).rstrip()
     if edit_message is not None:
         try:
             await edit_message.edit_text(text, reply_markup=subscriptions_actions_keyboard())
