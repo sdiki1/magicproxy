@@ -22,6 +22,9 @@ EMOJI_DONE="5427009714745517609"
 EMOJI_CANCEL = "5465665476971471368"
 EMOJI_DOCS = "5433653135799228968"
 
+SUPPORT_PROFILE_URL = "https://t.me/whtprx_bot"
+SERVICE_TERMS_URL = "https://telegra.ph/Publichnaya-oferta-04-08-13"
+
 def _button(
     *,
     text: str,
@@ -82,6 +85,42 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
                     text="Статус прокси",
                     callback_data="menu:status",
                     icon_custom_emoji_id=EMOJI_BOX,
+                )
+            ],
+            [
+                _button(
+                    text="Помощь и информация",
+                    callback_data="menu:help_info",
+                    style="primary",
+                    icon_custom_emoji_id=EMOJI_DOCS,
+                )
+            ],
+        ]
+    )
+
+
+def help_info_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                _button(
+                    text="Тех поддержка",
+                    url=SUPPORT_PROFILE_URL,
+                    style="primary",
+                )
+            ],
+            [
+                _button(
+                    text="Условия сервиса",
+                    url=SERVICE_TERMS_URL,
+                    style="primary",
+                )
+            ],
+            [
+                _button(
+                    text="Меню",
+                    callback_data="menu:home_clear",
+                    icon_custom_emoji_id=EMOJI_SHIELD,
                 )
             ],
         ]
@@ -349,6 +388,14 @@ def subscriptions_actions_keyboard() -> InlineKeyboardMarkup:
                     text="Статус прокси",
                     callback_data="menu:status",
                     icon_custom_emoji_id=EMOJI_BOX,
+                )
+            ],
+            [
+                _button(
+                    text="Помощь и информация",
+                    callback_data="menu:help_info",
+                    style="primary",
+                    icon_custom_emoji_id=EMOJI_DOCS,
                 )
             ],
             [

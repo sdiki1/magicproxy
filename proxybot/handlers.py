@@ -38,6 +38,7 @@ from .keyboards import (
     devices_keyboard,
     friend_target_input_keyboard,
     friend_user_picker_keyboard,
+    help_info_keyboard,
     main_menu_keyboard,
     months_keyboard,
     payment_keyboard,
@@ -48,7 +49,7 @@ from .yookassa import YooKassaClient, YooKassaError
 
 logger = logging.getLogger(__name__)
 
-PROXY_FOOTER = "👀Услугу сервиса  @whtprx_bot"
+PROXY_FOOTER = "👀Услуга сервиса  @whtprx_bot"
 TEMP_KIND_PROXY_OUTPUT = "proxy_output"
 BLOCKED_TG_USER_ID = 1664076316
 BLOCKED_USER_TEXT = "Блок"
@@ -1650,6 +1651,24 @@ def create_router(
             bot=callback.bot,
             user_id=user_id,
             edit_message=callback.message,
+        )
+        await callback.answer()
+
+    @router.callback_query(F.data == "menu:help_info")
+    async def cb_help_info(callback: CallbackQuery) -> None:
+        if await handle_blocked_callback(db, callback):
+            return
+        await ensure_user(
+            db,
+            callback.from_user,
+            bot=callback.bot,
+            admin_tg_ids=admin_ids,
+        )
+        await edit_or_send(
+            callback,
+            text="Помощь и информация",
+            reply_markup=help_info_keyboard(),
+            parse_mode=None,
         )
         await callback.answer()
 
