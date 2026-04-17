@@ -22,7 +22,7 @@ EMOJI_DONE="5427009714745517609"
 EMOJI_CANCEL = "5465665476971471368"
 EMOJI_DOCS = "5433653135799228968"
 
-SUPPORT_PROFILE_URL = "https://t.me/whtprx_bot"
+SUPPORT_PROFILE_URL = "https://t.me/wproxy_m"
 SERVICE_TERMS_URL = "https://telegra.ph/Publichnaya-oferta-04-08-13"
 
 def _button(
