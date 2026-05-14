@@ -8,7 +8,7 @@ from aiogram.types import (
     ReplyKeyboardMarkup,
 )
 
-from .database import Plan
+from .database import Plan, compute_plan_amount_rub
 
 
 EMOJI_SHIELD = "5407025283456835913"
@@ -160,7 +160,7 @@ def months_keyboard() -> InlineKeyboardMarkup:
 def devices_keyboard(plans: list[Plan], *, months_count: int) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
     for plan in plans:
-        total_amount = plan.price_rub * months_count
+        total_amount = compute_plan_amount_rub(plan, months_count)
         button_style = "primary"
         
         button_icon = EMOJI_BOX

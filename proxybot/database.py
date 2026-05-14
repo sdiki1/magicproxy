@@ -33,10 +33,25 @@ class ProxyPoolEntry:
 
 
 DEFAULT_PLANS = (
-    Plan(code="one", title="1 ссылка (1 устройство)", devices_count=1, price_rub=10, duration_days=30),
-    Plan(code="five", title="5 ссылок (5 устройств)", devices_count=5, price_rub=25, duration_days=30),
-    Plan(code="fifteen", title="15 ссылок (15 устройств)", devices_count=15, price_rub=50, duration_days=30),
+    Plan(code="one", title="1 ссылка (1 устройство)", devices_count=1, price_rub=79, duration_days=30),
+    Plan(code="five", title="5 ссылок (5 устройств)", devices_count=5, price_rub=345, duration_days=30),
+    Plan(code="fifteen", title="15 ссылок (15 устройств)", devices_count=15, price_rub=695, duration_days=30),
 )
+
+
+PLAN_TOTAL_RUB_OVERRIDES: dict[tuple[str, int], int] = {
+    ("one", 1): 79, ("one", 3): 237, ("one", 6): 474, ("one", 12): 948,
+    ("five", 1): 345, ("five", 3): 1035, ("five", 6): 2070, ("five", 12): 4249,
+    ("fifteen", 1): 695, ("fifteen", 3): 1737, ("fifteen", 6): 3474, ("fifteen", 12): 6948,
+}
+
+
+def compute_plan_amount_rub(plan: "Plan", months_count: int) -> int:
+    months = max(1, months_count)
+    override = PLAN_TOTAL_RUB_OVERRIDES.get((plan.code, months))
+    if override is not None:
+        return override
+    return plan.price_rub * months
 
 
 def now_ts() -> int:
@@ -253,11 +268,7 @@ class Database:
                 """
                 INSERT INTO plans (code, title, devices_count, price_rub, duration_days)
                 VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(code) DO UPDATE SET
-                    title = excluded.title,
-                    devices_count = excluded.devices_count,
-                    price_rub = excluded.price_rub,
-                    duration_days = excluded.duration_days
+                ON CONFLICT(code) DO NOTHING
                 """,
                 (plan.code, plan.title, plan.devices_count, plan.price_rub, plan.duration_days),
             )

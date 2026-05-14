@@ -225,11 +225,7 @@ class PostgresDatabase:
                     """
                     INSERT INTO plans (code, title, devices_count, price_rub, duration_days)
                     VALUES (%s, %s, %s, %s, %s)
-                    ON CONFLICT(code) DO UPDATE SET
-                        title = EXCLUDED.title,
-                        devices_count = EXCLUDED.devices_count,
-                        price_rub = EXCLUDED.price_rub,
-                        duration_days = EXCLUDED.duration_days
+                    ON CONFLICT(code) DO NOTHING
                     """,
                     (plan.code, plan.title, plan.devices_count, plan.price_rub, plan.duration_days),
                 )

@@ -23,7 +23,7 @@ from aiogram.types import (
     User as TelegramUser,
 )
 
-from .database import Database, Plan
+from .database import Database, Plan, compute_plan_amount_rub
 from .keyboards import (
     EMOJI_BOX,
     EMOJI_DEV,
@@ -723,7 +723,7 @@ def create_router(
         plan: Plan,
         months_count: int,
     ) -> tuple[int, str | None]:
-        amount_rub = plan.price_rub * max(1, months_count)
+        amount_rub = compute_plan_amount_rub(plan, months_count)
         yookassa_payment_id: str | None = None
         yookassa_confirmation_url: str | None = None
         if yk.enabled:
@@ -1781,7 +1781,7 @@ def create_router(
                 f"{tg_emoji(EMOJI_SHIELD, '🛡')} <b>Шаг 3/3</b>\n\n"
                 f"Срок: <b>{months_count} {month_word(months_count)}</b>\n"
                 f"Устройств: <b>{plan.devices_count}</b>\n"
-                f"Сумма: <b>{plan.price_rub * months_count}₽</b>\n\n"
+                f"Сумма: <b>{compute_plan_amount_rub(plan, months_count)}₽</b>\n\n"
                 "Выберите, для кого оформить покупку."
             ),
             reply_markup=purchase_target_keyboard(months_count=months_count, plan_code=plan.code),
@@ -1868,7 +1868,7 @@ def create_router(
             await callback.answer("Неизвестный вариант", show_alert=True)
             return
 
-        amount_rub = plan.price_rub * months_count
+        amount_rub = compute_plan_amount_rub(plan, months_count)
         try:
             payment_id, confirmation_url = await create_checkout_payment(
                 buyer_user_id=buyer_user_id,
@@ -1990,7 +1990,7 @@ def create_router(
 
         recipient_profile = await ensure_recipient_profile(target_tg_user_id)
 
-        amount_rub = plan.price_rub * months_count
+        amount_rub = compute_plan_amount_rub(plan, months_count)
         try:
             payment_id, confirmation_url = await create_checkout_payment(
                 buyer_user_id=buyer_user_id,
